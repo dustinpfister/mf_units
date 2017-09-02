@@ -2,6 +2,10 @@
 
 This helps manage units, and unit collections. It is geared for use in a space shooter type game in which there are many units that share certain common values and methods.
 
+As of this writing mf_units needs:
+
+* [mf_shell.js v0.2.4](https://github.com/dustinpfister/mf_shell/tree/0.2.4)
+
 ## Getting Started
 
 ```js
@@ -42,5 +46,5 @@ var someUnits = new UnitCollection({
     });
  
  // returns the unit in the collection that collides with the given unit
-console.log(someUnits.collidesWith(pl));
+_.l(someUnits.collidesWith(pl));
 ```
