@@ -268,15 +268,28 @@ ShipCollection.prototype.update = function (obj) {
 
     // step units
     if (this.ai) {
+
         this.units.forEach(function (ship) {
+
+            var d;
+
+            // current one and only AI Script
 
             ship.delta = 1;
 
-            ship.a += _.r( - .1, .1)
+            //ship.a += _.r( - .1, .1)
 
+            // no target? try to get one
             if (!ship.target) {
 
                 ship.findTarget(self.enemys);
+
+            }
+
+            // got a target? yeah
+            if (ship.target) {
+
+                ship.dtt = _.d(ship, target);
 
             }
 
