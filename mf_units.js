@@ -19,7 +19,7 @@ var Unit = function (obj) {
     this.delta = 1;
 
     // hit points
-    this.maxHP = obj.maxHP || 100;
+    this.maxHP = obj.maxHP || 20;
     this.hp = this.maxHP;
 
     // faction or owner of the unit
@@ -44,7 +44,16 @@ var Shot = function (obj) {
     this.delta = 6;
 
     this.life = 100;
-    this.damage = 1;
+    this.dam = 1;
+
+    // higher max hp
+    this.maxHP = 50;
+    this.hp = this.maxHP;
+
+    this.w = 4;
+    this.h = 4;
+
+    this.fromShip = obj.fromShip || {};
 
 };
 
@@ -58,11 +67,57 @@ var Ship = function (obj) {
 
     Unit.call(this, obj);
 
-    this.delta = 5;
+    this.delta = 3;
+    this.shots = obj.shots || false;
+
+    this.lastFire = new Date();
+    this.fireRate = obj.firRate || 100;
+
+    // false means no target
+    this.target = false;
 
 };
 
 Ship.prototype = new Unit();
+
+// select a random target from the given collection
+Ship.prototype.findTarget = function (eShips) {
+
+    // default to no target
+    this.target = false;
+
+    if (eShips.units.length > 0) {
+
+        this.target = eShips.units[Math.floor(_.r(eShips.units.length))]
+
+    }
+
+};
+
+// the ship shoots
+Ship.prototype.shoot = function () {
+
+    var now = new Date();
+
+    if (this.shots) {
+
+        if (now - this.lastFire >= this.fireRate) {
+
+            this.shots.add(new Shot({
+
+                    x : this.x + this.w / 2,
+                    y : this.y + this.h / 2,
+                    a : this.a,
+                    fromShip : this
+                }));
+
+            this.lastFire = now;
+
+        }
+
+    }
+
+};
 
 /**************************************************
 UnitCollection
@@ -139,10 +194,12 @@ var ShotCollection = function (obj) {
 
 ShotCollection.prototype = new UnitCollection();
 
-ShotCollection.prototype.step = function () {
+ShotCollection.prototype.step = function (fe) {
 
     var i = this.units.length,
     sh;
+
+    fe = fe || function () {};
     while (i--) {
 
         sh = this.units[i];
@@ -155,6 +212,8 @@ ShotCollection.prototype.step = function () {
 
             sh.hp = 0;
         }
+
+        fe(sh);
 
     }
 
@@ -172,6 +231,8 @@ var ShipCollection = function (obj) {
     UnitCollection.call(this, obj);
 
     this.faction = obj.faction || 'n';
+
+    this.ai = obj.ai || false;
 
     // give a ref to the enemy ship collection, or else there will not be one
     this.enemys = obj.enemys || {
@@ -193,7 +254,74 @@ ShipCollection.prototype.addShip = function (obj) {
     // always set ship faction to the collection
     obj.faction = this.faction;
 
+    // ref to this collections shot array
+    obj.shots = this.shots;
+
     // make sure the unit being added is a Ship, and not just a plain old Unit
     this.add(new Ship(obj));
+
+};
+
+ShipCollection.prototype.update = function (obj) {
+
+    var self = this;
+
+    // step units
+    if (this.ai) {
+        this.units.forEach(function (ship) {
+
+            ship.delta = 1;
+
+            ship.a += _.r( - .1, .1)
+
+            if (!ship.target) {
+
+                ship.findTarget(self.enemys);
+
+            }
+
+            ship.step();
+
+        });
+
+    }
+
+    // step shots
+    this.shots.step(function (sh) {
+
+        var es = self.enemys,
+        i = es.units.length,
+        e;
+
+        // check to see if we hit any enemys
+        if (i > 0) {
+            while (i--) {
+
+                e = es.units[i];
+
+                if (_.b(sh, e)) {
+
+                    sh.hp = 0;
+
+                    e.hp -= sh.dam;
+
+                    // if the enemy has been killed
+                    if (e.hp <= 0) {
+
+                        // set target back to false.
+                        sh.fromShip.target = false;
+
+                    }
+
+                }
+
+            }
+
+        }
+
+    });
+
+    // purge dead units
+    this.purgeDead();
 
 };
