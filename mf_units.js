@@ -75,6 +75,7 @@ var Ship = function (obj) {
 
     // false means no target
     this.target = false;
+    this.dtt = 0; //distnace to target
 
 };
 
@@ -268,7 +269,6 @@ ShipCollection.prototype.update = function (obj) {
 
     // step units
     if (this.ai) {
-
         this.units.forEach(function (ship) {
 
             var d;
@@ -289,7 +289,8 @@ ShipCollection.prototype.update = function (obj) {
             // got a target? yeah
             if (ship.target) {
 
-                ship.dtt = _.d(ship, target);
+                // distance to target
+                ship.dtt = _.d(ship.x, ship.y, ship.target.x, ship.target.y);
 
             }
 
