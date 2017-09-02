@@ -1,10 +1,9 @@
 
 
 
-
 /**************************************************
 Unit
-**************************************************/
+ **************************************************/
 var Unit = function (obj) {
 
     obj = obj || {};
@@ -35,12 +34,9 @@ Unit.prototype.step = function () {
 
 };
 
-
-
-
 /**************************************************
 Shot
-**************************************************/
+ **************************************************/
 var Shot = function (obj) {
 
     Unit.call(this, obj);
@@ -54,12 +50,9 @@ var Shot = function (obj) {
 
 Shot.prototype = new Unit();
 
-
-
-
 /**************************************************
 Ship
-**************************************************/
+ **************************************************/
 // Ship class used for ships of any faction
 var Ship = function (obj) {
 
@@ -71,12 +64,9 @@ var Ship = function (obj) {
 
 Ship.prototype = new Unit();
 
-
-
-
 /**************************************************
 UnitCollection
-**************************************************/
+ **************************************************/
 var UnitCollection = function (obj) {
 
     obj = obj || {};
@@ -134,14 +124,13 @@ UnitCollection.prototype.add = function (unit) {
 
 };
 
-
-
-
 /**************************************************
 ShotCollection
-**************************************************/
+ **************************************************/
 // Shot Collection
 var ShotCollection = function (obj) {
+
+    obj = obj || {};
 
     UnitCollection.call(this, obj);
     this.max = 50;
@@ -170,5 +159,25 @@ ShotCollection.prototype.step = function () {
     }
 
     this.purgeDead();
+
+};
+
+/**************************************************
+ShipCollection
+ **************************************************/
+var ShipCollection = function (obj) {
+
+    obj = obj || {};
+
+    UnitCollection.call(this, obj);
+
+    // give a ref to the enemy ship collection, or else there will not be one
+    this.enemys = obj.enemys || {
+        units : [],
+        max : 0
+    };
+
+    // each shipCollection also has a collection of there shots
+    this.shots = new ShotCollection();
 
 };
