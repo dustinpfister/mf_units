@@ -93,9 +93,9 @@ UnitCollection.prototype.collidesWith = function (unit) {
     var i = this.units.length;
     while (i--) {
 
-        if (_.b(this.unit[i], unit)) {
+        if (_.b(this.units[i], unit)) {
 
-            return this.unit[i];
+            return this.units[i];
 
         }
 
