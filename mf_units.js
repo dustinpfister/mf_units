@@ -171,6 +171,8 @@ var ShipCollection = function (obj) {
 
     UnitCollection.call(this, obj);
 
+    this.faction = obj.faction || 'n';
+
     // give a ref to the enemy ship collection, or else there will not be one
     this.enemys = obj.enemys || {
         units : [],
@@ -179,5 +181,19 @@ var ShipCollection = function (obj) {
 
     // each shipCollection also has a collection of there shots
     this.shots = new ShotCollection();
+
+};
+
+ShipCollection.prototype = new UnitCollection();
+
+ShipCollection.prototype.addShip = function (obj) {
+
+    obj = obj || {}
+
+    // always set ship faction to the collection
+    obj.faction = this.faction;
+
+    // make sure the unit being added is a Ship, and not just a plain old Unit
+    this.add(new Ship(obj));
 
 };
