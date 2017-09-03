@@ -14,6 +14,9 @@ var Unit = function (obj) {
     this.w = obj.w || 32;
     this.h = obj.h || 32;
 
+    this.hw = 16;
+    this.hh = 16;
+
     // angle
     this.a = obj.a || 0;
     this.delta = 1;
@@ -24,6 +27,11 @@ var Unit = function (obj) {
 
     // faction or owner of the unit
     this.faction = obj.faction || 'n'; // default to n for neutral
+
+    // default formating
+    this.s = '#ffffff'; // stroke style
+    this.f = '#000000'; // fill style
+    this.i = 3; //
 
 };
 
@@ -75,7 +83,13 @@ var Ship = function (obj) {
 
     // false means no target
     this.target = false;
-    this.dtt = 0; //distnace to target
+    this.dtt = 0; //distance to target
+    this.aDir = 0; // angle direction ()
+    this.adt = 0; // angle distance to target.
+
+    this.turnPer = 0; // turn percent
+    this.maxTurn = Math.PI / 180 * 30; // max turn per tick
+    this.aDelta = 0; // angle delta rate
 
 };
 
@@ -275,9 +289,10 @@ ShipCollection.prototype.update = function (obj) {
 
             // current one and only AI Script
 
-            ship.delta = 1;
+            ship.delta = 2;
 
             //ship.a += _.r( - .1, .1)
+            //ship.a = Math.PI*1.5;
 
             // no target? try to get one
             if (!ship.target) {
@@ -289,8 +304,42 @@ ShipCollection.prototype.update = function (obj) {
             // got a target? yeah
             if (ship.target) {
 
+                var toTarget = Math.atan2(ship.target.y - ship.y, ship.target.x - ship.x);
                 // distance to target
-                ship.dtt = _.d(ship.x, ship.y, ship.target.x, ship.target.y);
+                ship.dtt = _.d(ship.x + ship.w, ship.y, ship.target.x, ship.target.y);
+
+                // angle distance to target
+                ship.adt = _.ad(ship.a, toTarget);
+
+                // turn percent
+                ship.turnPer = ship.adt / Math.PI;
+
+                // angle delta
+                ship.aDelta = ship.turnPer * ship.maxTurn;
+
+                // far away? move to the target
+                if (ship.dtt > 100) {
+
+                    // -1 or 1
+                    ship.aDir = _.asd(ship.a, toTarget);
+
+                    if (ship.aDir === 1) {
+
+                        //ship.a += Math.PI / 100;
+                        //ship.a += ship.adt;
+                        ship.a += ship.aDelta;
+
+                    }
+
+                    if (ship.aDir === -1) {
+
+                        //ship.a -= Math.PI / 100;
+                        //ship.a -= ship.adt;
+                        ship.a -= ship.aDelta;
+
+                    }
+
+                }
 
             }
 
