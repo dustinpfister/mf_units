@@ -4,39 +4,59 @@
 /**************************************************
 Unit
  **************************************************/
-var Unit = function (obj) {
+var Unit = (function () {
 
-    obj = obj || {};
+    var ct = 0;
 
-    // position and size
-    this.x = obj.x || -16;
-    this.y = obj.y || -16;
-    this.w = obj.w || 32;
-    this.h = obj.h || 32;
+    return function (obj) {
 
-    this.hw = 16;
-    this.hh = 16;
+        obj = obj || {};
 
-    // angle
-    this.a = obj.a || 0;
-    this.delta = 1;
+        // may want id's for all units
+        this.id = obj.id || ct + '_' + new Date().getTime();
 
-    // hit points
-    this.maxHP = obj.maxHP || 20;
-    this.hp = this.maxHP;
+        // step count
+        ct += 1;
+        if (ct > 1000) {
+            ct = 0;
+        }
 
-    // faction or owner of the unit
-    this.faction = obj.faction || 'n'; // default to n for neutral
+        // position and size
+        this.x = obj.x || -16;
+        this.y = obj.y || -16;
+        this.w = obj.w || 32;
+        this.h = obj.h || 32;
 
-    // default formating
-    this.s = '#ffffff'; // stroke style
-    this.f = '#000000'; // fill style
-    this.i = 3; //
+        this.hw = 16;
+        this.hh = 16;
 
-};
+        // angle
+        this.a = obj.a || 0;
+        this.delta = 1;
+
+        // hit points
+        this.maxHP = obj.maxHP || 20;
+        this.hp = this.maxHP;
+
+        // faction or owner of the unit
+        this.faction = obj.faction || 'n'; // default to n for neutral
+
+        // default formating
+        this.s = '#ffffff'; // stroke style
+        this.f = '#000000'; // fill style
+        this.i = 3; // line size
+
+    };
+
+}
+    ());
 
 Unit.prototype.step = function () {
 
+    // normalize this.a
+    this.a = _.an(this.a);
+
+    // step x and y by current angle and delta
     this.x += Math.cos(this.a) * this.delta;
     this.y += Math.sin(this.a) * this.delta;
 
@@ -75,7 +95,7 @@ var Ship = function (obj) {
 
     Unit.call(this, obj);
 
-    this.delta = 3;
+    this.delta = obj.delta || 3;
     this.shots = obj.shots || false;
 
     this.lastFire = new Date();
@@ -87,8 +107,9 @@ var Ship = function (obj) {
     this.aDir = 0; // angle direction ()
     this.adt = 0; // angle distance to target.
 
+    this.toTarget = 0;
     this.turnPer = 0; // turn percent
-    this.maxTurn = Math.PI / 180 * 30; // max turn per tick
+    this.maxTurn = Math.PI / 180 * 10; // max turn per tick
     this.aDelta = 0; // angle delta rate
 
 };
@@ -104,6 +125,47 @@ Ship.prototype.findTarget = function (eShips) {
     if (eShips.units.length > 0) {
 
         this.target = eShips.units[Math.floor(_.r(eShips.units.length))]
+
+    }
+
+};
+
+Ship.prototype.updateTarget = function () {
+
+    var toTarget;
+
+    if (this.target) {
+
+        this.toTarget = Math.atan2(this.target.y - this.y, this.target.x - this.x);
+        // distance to target
+        this.dtt = _.d(this.x + this.w, this.y, this.target.x, this.target.y);
+
+        // angle distance to target
+        this.adt = _.ad(this.a, this.toTarget);
+
+        // turn percent
+        this.turnPer = this.adt / Math.PI;
+
+        // angle delta
+        this.aDelta = this.turnPer * this.maxTurn;
+
+    }
+
+};
+
+Ship.prototype.followTarget = function () {
+
+    this.aDir = _.asd(this.a, this.toTarget);
+
+    if (this.aDir === 1) {
+
+        this.a += this.aDelta;
+
+    }
+
+    if (this.aDir === -1) {
+
+        this.a -= this.aDelta;
 
     }
 
@@ -289,7 +351,7 @@ ShipCollection.prototype.update = function (obj) {
 
             // current one and only AI Script
 
-            ship.delta = 2;
+            //ship.delta = 2;
 
             //ship.a += _.r( - .1, .1)
             //ship.a = Math.PI*1.5;
@@ -304,40 +366,12 @@ ShipCollection.prototype.update = function (obj) {
             // got a target? yeah
             if (ship.target) {
 
-                var toTarget = Math.atan2(ship.target.y - ship.y, ship.target.x - ship.x);
-                // distance to target
-                ship.dtt = _.d(ship.x + ship.w, ship.y, ship.target.x, ship.target.y);
-
-                // angle distance to target
-                ship.adt = _.ad(ship.a, toTarget);
-
-                // turn percent
-                ship.turnPer = ship.adt / Math.PI;
-
-                // angle delta
-                ship.aDelta = ship.turnPer * ship.maxTurn;
+                ship.updateTarget();
 
                 // far away? move to the target
-                if (ship.dtt > 100) {
+                if (ship.dtt > 200) {
 
-                    // -1 or 1
-                    ship.aDir = _.asd(ship.a, toTarget);
-
-                    if (ship.aDir === 1) {
-
-                        //ship.a += Math.PI / 100;
-                        //ship.a += ship.adt;
-                        ship.a += ship.aDelta;
-
-                    }
-
-                    if (ship.aDir === -1) {
-
-                        //ship.a -= Math.PI / 100;
-                        //ship.a -= ship.adt;
-                        ship.a -= ship.aDelta;
-
-                    }
+                    ship.followTarget();
 
                 }
 
