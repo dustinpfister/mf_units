@@ -71,9 +71,9 @@ Shot
  **************************************************/
 var Shot = function (obj) {
 
-    var s = this;
+    var s = this
 
-    Unit.call(s, obj);
+        Unit.call(s, obj);
 
     s.delta = 6;
 
@@ -122,9 +122,9 @@ var Ship = function (obj) {
 
 };
 
-var p = Ship.prototype;
+var p = Ship.prototype = new Unit();
 
-p = new Unit();
+//Ship.prototype = new Unit();
 
 // select a random target from the given collection
 p.findTarget = function (eShips) {
@@ -142,22 +142,23 @@ p.findTarget = function (eShips) {
 
 p.updateTarget = function () {
 
-    var toTarget;
+    var toTarget,
+    s = this;
 
-    if (this.target) {
+    if (s.target) {
 
-        this.toTarget = Math.atan2(this.target.y - this.y, this.target.x - this.x);
+        s.toTarget = Math.atan2(s.target.y - s.y, s.target.x - s.x);
         // distance to target
-        this.dtt = _.d(this.x + this.w, this.y, this.target.x, this.target.y);
+        s.dtt = _.d(s.x + s.w, s.y, s.target.x, s.target.y);
 
         // angle distance to target
-        this.adt = _.ad(this.a, this.toTarget);
+        s.adt = _.ad(s.a, s.toTarget);
 
         // turn percent
-        this.turnPer = this.adt / Math.PI;
+        s.turnPer = s.adt / Math.PI;
 
         // angle delta
-        this.aDelta = this.turnPer * this.maxTurn;
+        s.aDelta = s.turnPer * s.maxTurn;
 
     }
 
@@ -165,17 +166,19 @@ p.updateTarget = function () {
 
 p.followTarget = function () {
 
-    this.aDir = _.asd(this.a, this.toTarget);
+    var s = this;
 
-    if (this.aDir === 1) {
+    s.aDir = _.asd(s.a, s.toTarget);
 
-        this.a += this.aDelta;
+    if (s.aDir === 1) {
+
+        s.a += s.aDelta;
 
     }
 
-    if (this.aDir === -1) {
+    if (s.aDir === -1) {
 
-        this.a -= this.aDelta;
+        s.a -= s.aDelta;
 
     }
 
@@ -184,21 +187,21 @@ p.followTarget = function () {
 // the ship shoots
 p.shoot = function () {
 
-    var now = new Date();
+    var now = new Date(), s = this;
 
-    if (this.shots) {
+    if (s.shots) {
 
-        if (now - this.lastFire >= this.fireRate) {
+        if (now - s.lastFire >= s.fireRate) {
 
             this.shots.add(new Shot({
 
-                    x : this.x + this.w / 2,
-                    y : this.y + this.h / 2,
-                    a : this.a,
-                    fromShip : this
+                    x : s.x + s.w / 2,
+                    y : s.y + s.h / 2,
+                    a : s.a,
+                    fromShip : s
                 }));
 
-            this.lastFire = now;
+            s.lastFire = now;
 
         }
 
@@ -218,9 +221,11 @@ var UnitCollection = function (obj) {
 
 };
 
+p = UnitCollection.prototype;
+
 // check if the given unit collides with any unit in the collection, if so return that
 // unit from the collection
-UnitCollection.prototype.collidesWith = function (unit) {
+p.collidesWith = function (unit) {
 
     var i = this.units.length;
     while (i--) {
@@ -237,7 +242,7 @@ UnitCollection.prototype.collidesWith = function (unit) {
 };
 
 // purge all units that have an hp value of 0 or lower
-UnitCollection.prototype.purgeDead = function () {
+p.purgeDead = function () {
 
     var i = this.units.length;
     while (i--) {
@@ -254,7 +259,7 @@ UnitCollection.prototype.purgeDead = function () {
 };
 
 // push in a new unit if we have not reached the max
-UnitCollection.prototype.add = function (unit) {
+p.add = function (unit) {
 
     unit = unit || new Unit();
 
@@ -279,9 +284,9 @@ var ShotCollection = function (obj) {
 
 };
 
-ShotCollection.prototype = new UnitCollection();
+p = ShotCollection.prototype = new UnitCollection();
 
-ShotCollection.prototype.step = function (fe) {
+p.step = function (fe) {
 
     var i = this.units.length,
     sh;
@@ -313,28 +318,30 @@ ShipCollection
  **************************************************/
 var ShipCollection = function (obj) {
 
+var s = this;
+
     obj = obj || {};
 
-    UnitCollection.call(this, obj);
+    UnitCollection.call(s, obj);
 
-    this.faction = obj.faction || 'n';
+    s.faction = obj.faction || 'n';
 
-    this.ai = obj.ai || false;
+    s.ai = obj.ai || false;
 
     // give a ref to the enemy ship collection, or else there will not be one
-    this.enemys = obj.enemys || {
+    s.enemys = obj.enemys || {
         units : [],
         max : 0
     };
 
     // each shipCollection also has a collection of there shots
-    this.shots = new ShotCollection();
+    s.shots = new ShotCollection();
 
 };
 
-ShipCollection.prototype = new UnitCollection();
+p = ShipCollection.prototype = new UnitCollection();
 
-ShipCollection.prototype.addShip = function (obj) {
+p.addShip = function (obj) {
 
     obj = obj || {}
 
@@ -349,40 +356,40 @@ ShipCollection.prototype.addShip = function (obj) {
 
 };
 
-ShipCollection.prototype.update = function (obj) {
+p.update = function (obj) {
 
     var s = this;
 
     // step units
     if (s.ai) {
-        s.units.forEach(function (h) {
+        s.units.forEach(function (ship) {
 
             var d;
 
             // current one and only AI Script
 
             // no target? try to get one
-            if (!h.target) {
+            if (!ship.target) {
 
-                h.findTarget(s.enemys);
+                ship.findTarget(s.enemys);
 
             }
 
             // got a target? yeah
-            if (h.target) {
+            if (ship.target) {
 
-                h.updateTarget();
+                ship.updateTarget();
 
                 // far away? move to the target
-                if (h.dtt > 200) {
+                if (ship.dtt > 200) {
 
-                    h.followTarget();
+                    ship.followTarget();
 
                 }
 
             }
 
-            h.step();
+            ship.step();
 
         });
 
@@ -391,7 +398,7 @@ ShipCollection.prototype.update = function (obj) {
     // step shots
     s.shots.step(function (sh) {
 
-        var es = self.enemys,
+        var es = s.enemys,
         i = es.units.length,
         e;
 
