@@ -10,10 +10,12 @@ var Unit = (function () {
 
     return function (obj) {
 
+        var s = this;
+
         obj = obj || {};
 
         // may want id's for all units
-        this.id = obj.id || ct + '_' + new Date().getTime();
+        s.id = obj.id || ct + '_' + new Date().getTime();
 
         // step count
         ct += 1;
@@ -22,29 +24,29 @@ var Unit = (function () {
         }
 
         // position and size
-        this.x = obj.x || -16;
-        this.y = obj.y || -16;
-        this.w = obj.w || 32;
-        this.h = obj.h || 32;
+        s.x = obj.x || -16;
+        s.y = obj.y || -16;
+        s.w = obj.w || 32;
+        s.h = obj.h || 32;
 
-        this.hw = 16;
-        this.hh = 16;
+        s.hw = 16;
+        s.hh = 16;
 
         // angle
-        this.a = obj.a || 0;
-        this.delta = 1;
+        s.a = obj.a || 0;
+        s.delta = 1;
 
         // hit points
-        this.maxHP = obj.maxHP || 20;
-        this.hp = this.maxHP;
+        s.maxHP = obj.maxHP || 20;
+        s.hp = s.maxHP;
 
         // faction or owner of the unit
-        this.faction = obj.faction || 'n'; // default to n for neutral
+        s.faction = obj.faction || 'n'; // default to n for neutral
 
         // default formating
-        this.s = '#ffffff'; // stroke style
-        this.f = '#000000'; // fill style
-        this.i = 3; // line size
+        s.s = '#ffffff'; // stroke style
+        s.f = '#000000'; // fill style
+        s.i = 3; // line size
 
     };
 
@@ -53,12 +55,14 @@ var Unit = (function () {
 
 Unit.prototype.step = function () {
 
+    var s = this;
+
     // normalize this.a
-    this.a = _.an(this.a);
+    s.a = _.an(s.a);
 
     // step x and y by current angle and delta
-    this.x += Math.cos(this.a) * this.delta;
-    this.y += Math.sin(this.a) * this.delta;
+    s.x += Math.cos(s.a) * s.delta;
+    s.y += Math.sin(s.a) * s.delta;
 
 };
 
@@ -67,21 +71,23 @@ Shot
  **************************************************/
 var Shot = function (obj) {
 
-    Unit.call(this, obj);
+    var s = this;
 
-    this.delta = 6;
+    Unit.call(s, obj);
 
-    this.life = 100;
-    this.dam = 1;
+    s.delta = 6;
+
+    s.life = 100;
+    s.dam = 1;
 
     // higher max hp
-    this.maxHP = 50;
-    this.hp = this.maxHP;
+    s.maxHP = 50;
+    s.hp = s.maxHP;
 
-    this.w = 4;
-    this.h = 4;
+    s.w = 4;
+    s.h = 4;
 
-    this.fromShip = obj.fromShip || {};
+    s.fromShip = obj.fromShip || {};
 
 };
 
@@ -93,31 +99,35 @@ Ship
 // Ship class used for ships of any faction
 var Ship = function (obj) {
 
-    Unit.call(this, obj);
+    var s = this;
 
-    this.delta = obj.delta || 3;
-    this.shots = obj.shots || false;
+    Unit.call(s, obj);
 
-    this.lastFire = new Date();
-    this.fireRate = obj.firRate || 100;
+    s.delta = obj.delta || 3;
+    s.shots = obj.shots || false;
+
+    s.lastFire = new Date();
+    s.fireRate = obj.firRate || 100;
 
     // false means no target
-    this.target = false;
-    this.dtt = 0; //distance to target
-    this.aDir = 0; // angle direction ()
-    this.adt = 0; // angle distance to target.
+    s.target = false;
+    s.dtt = 0; //distance to target
+    s.aDir = 0; // angle direction ()
+    s.adt = 0; // angle distance to target.
 
-    this.toTarget = 0;
-    this.turnPer = 0; // turn percent
-    this.maxTurn = Math.PI / 180 * 10; // max turn per tick
-    this.aDelta = 0; // angle delta rate
+    s.toTarget = 0;
+    s.turnPer = 0; // turn percent
+    s.maxTurn = Math.PI / 180 * 10; // max turn per tick
+    s.aDelta = 0; // angle delta rate
 
 };
 
-Ship.prototype = new Unit();
+var p = Ship.prototype;
+
+p = new Unit();
 
 // select a random target from the given collection
-Ship.prototype.findTarget = function (eShips) {
+p.findTarget = function (eShips) {
 
     // default to no target
     this.target = false;
@@ -130,7 +140,7 @@ Ship.prototype.findTarget = function (eShips) {
 
 };
 
-Ship.prototype.updateTarget = function () {
+p.updateTarget = function () {
 
     var toTarget;
 
@@ -153,7 +163,7 @@ Ship.prototype.updateTarget = function () {
 
 };
 
-Ship.prototype.followTarget = function () {
+p.followTarget = function () {
 
     this.aDir = _.asd(this.a, this.toTarget);
 
@@ -172,7 +182,7 @@ Ship.prototype.followTarget = function () {
 };
 
 // the ship shoots
-Ship.prototype.shoot = function () {
+p.shoot = function () {
 
     var now = new Date();
 
@@ -341,50 +351,45 @@ ShipCollection.prototype.addShip = function (obj) {
 
 ShipCollection.prototype.update = function (obj) {
 
-    var self = this;
+    var s = this;
 
     // step units
-    if (this.ai) {
-        this.units.forEach(function (ship) {
+    if (s.ai) {
+        s.units.forEach(function (h) {
 
             var d;
 
             // current one and only AI Script
 
-            //ship.delta = 2;
-
-            //ship.a += _.r( - .1, .1)
-            //ship.a = Math.PI*1.5;
-
             // no target? try to get one
-            if (!ship.target) {
+            if (!h.target) {
 
-                ship.findTarget(self.enemys);
+                h.findTarget(s.enemys);
 
             }
 
             // got a target? yeah
-            if (ship.target) {
+            if (h.target) {
 
-                ship.updateTarget();
+                h.updateTarget();
 
                 // far away? move to the target
-                if (ship.dtt > 200) {
+                if (h.dtt > 200) {
 
-                    ship.followTarget();
+                    h.followTarget();
 
                 }
 
             }
 
-            ship.step();
+            h.step();
 
         });
 
     }
 
     // step shots
-    this.shots.step(function (sh) {
+    s.shots.step(function (sh) {
 
         var es = self.enemys,
         i = es.units.length,
@@ -419,6 +424,6 @@ ShipCollection.prototype.update = function (obj) {
     });
 
     // purge dead units
-    this.purgeDead();
+    s.purgeDead();
 
 };
